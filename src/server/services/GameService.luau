@@ -20,7 +20,7 @@ local GameService = Knit.CreateService({
 -- CONFIG
 local MIN_PLAYERS = 1
 local COUNTDOWN_TIME = 5
-local ROUND_TIME = 60
+local ROUND_TIME = 10
 local INTERMISSION_TIME = 5
 
 -- STATE

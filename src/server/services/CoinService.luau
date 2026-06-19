@@ -18,6 +18,7 @@ local COIN_TAG = "Coin"
 
 function CoinService:KnitStart()
 	print("[CoinService] Started")
+	self.PlayerDataService = Knit.GetService("PlayerDataService")
 	self:_connectCoins()
 end
 
@@ -61,6 +62,13 @@ function CoinService:_collectCoin(player, coin)
 	end
 
 	coin:SetAttribute("Collected", true)
+	coin.CanTouch = false
+
+	coin:SetAttribute("Collected", true)
+
+	if self.PlayerDataService then
+		self.PlayerDataService:addCoins(player, 1)
+	end
 	print(player.Name .. " collected a coin!")
 
 	coin:Destroy()
