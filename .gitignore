@@ -1,0 +1,10 @@
+# Project place file
+/coin-rush.rbxlx
+Packages/
+ServerPackages/
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+sourcemap.json
