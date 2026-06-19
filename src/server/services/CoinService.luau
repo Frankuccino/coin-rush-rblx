@@ -18,8 +18,13 @@ local COIN_TAG = "Coin"
 
 function CoinService:KnitStart()
 	print("[CoinService] Started")
+
 	self.PlayerDataService = Knit.GetService("PlayerDataService")
-	self:_connectCoins()
+	self.GameService = Knit.GetService("GameService")
+
+	task.defer(function()
+		self:_connectCoins()
+	end)
 end
 
 function CoinService:_connectCoins()
@@ -63,14 +68,18 @@ function CoinService:_collectCoin(player, coin)
 
 	coin:SetAttribute("Collected", true)
 	coin.CanTouch = false
+	coin.CanCollide = false
 
-	coin:SetAttribute("Collected", true)
+	-- permanent progression
+	self.PlayerDataService:addCoins(player, 1)
 
-	if self.PlayerDataService then
-		self.PlayerDataService:addCoins(player, 1)
-	end
+	-- round tracking
+	local roundScore = self.GameService:AddRoundCoin(player, 1)
+
+	-- UI Update
+	self.Client.RoundCoinsUpdated:Fire(player, roundScore)
+
 	print(player.Name .. " collected a coin!")
-
 	coin:Destroy()
 end
 

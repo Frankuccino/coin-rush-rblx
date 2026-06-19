@@ -14,6 +14,9 @@ local GameService = Knit.CreateService({
 	Client = {
 		StateChanged = Knit.CreateSignal(),
 		CountdownUpdated = Knit.CreateSignal(),
+
+		RoundCoinsUpdated = Knit.CreateSignal(),
+		TimerUpdated = Knit.CreateSignal(),
 	},
 })
 
@@ -26,12 +29,19 @@ local INTERMISSION_TIME = 5
 -- STATE
 GameService._playerCount = 0
 GameService._state = "Lobby"
+GameService._roundCoins = {}
 
 function GameService:_setState(newState)
 	self._state = newState
 	print("[GameService] State changed to:", newState)
 
 	self.Client.StateChanged:FireAll(newState)
+end
+
+-- Helper Function
+function GameService:AddRoundCoin(player, amount)
+	self._roundCoins[player] = (self._roundCoins[player] or 0) + amount
+	return self._roundCoins[player]
 end
 
 -- Get the total players
@@ -74,10 +84,14 @@ end
 function GameService:_startRound()
 	self:_setState("Active")
 
+	-- reset round data
+	self._roundCoins = {}
+
 	CoinSpawner:Start()
 
 	for i = ROUND_TIME, 1, -1 do
 		print("Round time remaining: " .. i .. " seconds")
+		self.Client.TimerUpdated:FireAll(i)
 		task.wait(1)
 	end
 
@@ -90,11 +104,27 @@ function GameService:_endRound()
 
 	CoinSpawner:Stop()
 
+	-- find winner
+	local topPlayer = nil
+	local topScore = -1
+
+	for player, score in pairs(self._roundCoins) do
+		if score > topScore then
+			topScore = score
+			topPlayer = player
+		end
+	end
+
+	if topPlayer then
+		print(" Winner:", topPlayer.Name, "with", topScore, "coins")
+	end
+
 	for i = INTERMISSION_TIME, 1, -1 do
 		print("Round time remaining: " .. i .. " seconds")
 		task.wait(1)
 	end
 
+	self._roundCoins = {}
 	self:_setState("Lobby")
 end
 
