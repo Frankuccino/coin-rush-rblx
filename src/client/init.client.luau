@@ -1,3 +1,15 @@
-print("Hello world, from client!, I'm connected to Roblox Studio with my Neovim")
-print("isn't that cool? here's my setup:")
-print("You don't really need VSCode, you can still use Neovim for this kind of workflow ")
+print("Client Started")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Knit = require(ReplicatedStorage.Packages.Knit)
+
+print("[Client] Starting Knit...")
+
+Knit.Start()
+	:andThen(function()
+		print("[Client] Knit started")
+	end)
+	:catch(function(err)
+		warn("[Client] Knit failed:", err)
+	end)
