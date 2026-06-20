@@ -6,6 +6,8 @@ local Knit = require(ReplicatedStorage.Packages.Knit)
 
 print("[Client] Starting Knit...")
 
+Knit.AddControllers(script.Parent.Client.controllers)
+
 Knit.Start()
 	:andThen(function()
 		print("[Client] Knit started")
