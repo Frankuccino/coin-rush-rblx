@@ -75,9 +75,8 @@ function CoinService:_collectCoin(player, coin)
 
 	-- round tracking
 	local roundScore = self.GameService:AddRoundCoin(player, 1)
-
 	-- UI Update
-	self.Client.RoundCoinsUpdated:Fire(player, roundScore)
+	self.GameService.Client.RoundCoinsUpdated:Fire(player, roundScore)
 
 	print(player.Name .. " collected a coin!")
 	coin:Destroy()
