@@ -1,8 +1,15 @@
+-- CoinSpawner spawns coins at random arena positions every 2s via CollectionService tags.
+-- Player touches coin -> Touched event fires -> server validates proximity -> awards coins -> fires UI update.
+-- Coins are destroyed on collection; no persistent VFX or spin logic is handled here.
+-- Round lifecycle (start/stop/timer) is managed by GameService.
+
 local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CoinSpawner = {}
-local COIN_TAG = "Coin"
+local COIN_TAG = require(ReplicatedStorage.Shared.constants.CoinConstants).Tag
+local COIN_CONSTANTS = require(ReplicatedStorage.Shared.constants.CoinConstants)
 local COIN_TEMPLATE = ServerStorage:WaitForChild("Coin")
 
 local ACTIVE = false
@@ -32,15 +39,20 @@ function CoinSpawner:_spawnLoop()
 	task.spawn(function()
 		while ACTIVE do
 			self:_spawnCoin()
-			task.wait(2)
+			task.wait(COIN_CONSTANTS.SpawnInterval)
 		end
 	end)
 end
 
 function CoinSpawner:_spawnCoin()
 	local coin = COIN_TEMPLATE:Clone()
+	local bounds = COIN_CONSTANTS.SpawnBounds
 
-	coin.Position = Vector3.new(math.random(-50, 50), 5, math.random(-50, 50))
+	coin.Position = Vector3.new(
+		math.random(bounds.MinX, bounds.MaxX),
+		bounds.Y,
+		math.random(bounds.MinZ, bounds.MaxZ)
+	)
 
 	coin.Anchored = true
 	coin.CanCollide = false
