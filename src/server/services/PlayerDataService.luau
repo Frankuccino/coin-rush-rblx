@@ -32,17 +32,6 @@ function PlayerDataService:KnitInit()
 	end)
 end
 
--- reads ~ get the coins of the player (verb)
-function PlayerDataService:getCoins(player)
-	local data = playerData[player]
-
-	if not data then
-		return 0
-	end
-
-	return data.coins
-end
-
 -- modifies ~ add coins to the player's total
 function PlayerDataService:addCoins(player, amount)
 	print("[DEBUG] Awarding coin to", player.Name)

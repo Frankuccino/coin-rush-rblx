@@ -1,13 +1,13 @@
 -- players spawn at lobby SpawnLocation
 -- HUD shows "Waiting for players..." with current count
--- Minimum player count check runs every 5s via task.spawn
--- Once >=2 players: transition to Countdown
--- PlayerAdded/PlayerRemoving update lobby count via RemoteEvent to all clients
---
+-- Minimum player count check runs every 5s via abortable loop
+-- Once >= MinPlayers: transition to Countdown
 
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoinSpawner = require(script.Parent.Parent.mechanics.CoinSpawner)
+local RoundConfig = require(ReplicatedStorage.Shared.config.RoundConfig)
 
 local GameService = Knit.CreateService({
 	Name = "GameService",
@@ -20,16 +20,17 @@ local GameService = Knit.CreateService({
 	},
 })
 
--- CONFIG
-local MIN_PLAYERS = 1
-local COUNTDOWN_TIME = 5
-local ROUND_TIME = 10
-local INTERMISSION_TIME = 5
+-- CONFIG (from RoundConfig.luau)
+local MIN_PLAYERS = RoundConfig.MinPlayers
+local COUNTDOWN_TIME = RoundConfig.CountdownTime
+local ROUND_TIME = RoundConfig.RoundTime
+local INTERMISSION_TIME = RoundConfig.IntermissionTime
 
 -- STATE
 GameService._playerCount = 0
 GameService._state = "Lobby"
 GameService._roundCoins = {}
+GameService._lobbyCancelled = false
 
 function GameService:_setState(newState)
 	self._state = newState
@@ -38,10 +39,11 @@ function GameService:_setState(newState)
 	self.Client.StateChanged:FireAll(newState)
 end
 
--- Helper Function
-function GameService:AddRoundCoin(player, amount)
-	self._roundCoins[player] = (self._roundCoins[player] or 0) + amount
-	return self._roundCoins[player]
+-- Helper: awards coins for a specific player in the current round
+function GameService:AddRoundCoin(player: Player, amount: number): number
+	local userId = player.UserId
+	self._roundCoins[userId] = (self._roundCoins[userId] or 0) + amount
+	return self._roundCoins[userId]
 end
 
 -- Get the total players
@@ -50,8 +52,9 @@ function GameService:_getPlayerCount()
 end
 
 -- Check the current Lobby's Players Validity
+-- Abortable: controlled by _lobbyCancelled flag
 function GameService:_checkLobby()
-	while true do
+	while not self._lobbyCancelled do
 		task.wait(5)
 
 		if self._state ~= "Lobby" then
@@ -66,6 +69,10 @@ function GameService:_checkLobby()
 			print("[GameService] Waiting for players...", count)
 		end
 	end
+end
+
+function GameService:_stopLobbyLoop()
+	self._lobbyCancelled = true
 end
 
 -- Start Game Match Countdown
@@ -86,6 +93,7 @@ function GameService:_startRound()
 
 	-- reset round data
 	self._roundCoins = {}
+	self._lobbyCancelled = false
 
 	CoinSpawner:Start()
 
@@ -104,23 +112,28 @@ function GameService:_endRound()
 
 	CoinSpawner:Stop()
 
-	-- find winner
-	local topPlayer = nil
+	-- find winner (by userId, then resolve to Player if still present)
+	local topUserId = nil
 	local topScore = -1
 
-	for player, score in pairs(self._roundCoins) do
+	for userId, score in pairs(self._roundCoins) do
 		if score > topScore then
 			topScore = score
-			topPlayer = player
+			topUserId = userId
 		end
 	end
 
-	if topPlayer then
-		print(" Winner:", topPlayer.Name, "with", topScore, "coins")
+	if topUserId then
+		local winner = Players:GetPlayerByUserId(topUserId)
+		if winner then
+			print(" Winner:", winner.Name, "with", topScore, "coins")
+		else
+			print(" Winner (left): userId", topUserId, "with", topScore, "coins")
+		end
 	end
 
 	for i = INTERMISSION_TIME, 1, -1 do
-		print("Round time remaining: " .. i .. " seconds")
+		print("Intermission time remaining: " .. i .. " seconds")
 		task.wait(1)
 	end
 
@@ -131,10 +144,15 @@ end
 -- Initialize GameService
 function GameService:KnitStart()
 	print("[GameService] Started")
+	self._lobbyCancelled = false
 
 	task.spawn(function()
 		self:_checkLobby()
 	end)
+end
+
+function GameService:KnitStop()
+	self:_stopLobbyLoop()
 end
 
 function GameService:DevStart()
