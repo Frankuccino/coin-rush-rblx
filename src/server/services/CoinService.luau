@@ -1,20 +1,20 @@
--- CoinSpawnService spawns coins every 2s at random arena positions using CollectionService tags
--- Coins spin via RunService.Heartbeaton the server (simple CFrame rotation)
--- Player touches coin -> Touched event fires -> server validates proximity -> awards coins -> fires UI update
--- Collect VFX (ParticleEmmitter bursr + TweenService scale-down) plays on client via RemoteEvent
--- 60-second server timer decrements, fires each second to clients for HUD timer
--- Timer reaches 0 -> transition to Results
+-- CoinService handles all coin lifecycle and collection logic.
+-- Uses server-side proximity detection (not Touched) for reliable collection.
+-- Anchored non-colliding parts do not reliably fire Touched; magnitude check is deterministic.
 
 local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CoinService = Knit.CreateService({
 	Name = "CoinService",
 	Client = {},
 })
 
-local COIN_TAG = "Coin"
+local COIN_TAG = require(ReplicatedStorage.Shared.constants.CoinConstants).Tag
+local COLLECTION_RADIUS = 3.5
 
 function CoinService:KnitStart()
 	print("[CoinService] Started")
@@ -24,6 +24,10 @@ function CoinService:KnitStart()
 
 	task.defer(function()
 		self:_connectCoins()
+	end)
+
+	self._proximityConnection = RunService.Heartbeat:Connect(function()
+		self:_checkProximity()
 	end)
 end
 
@@ -47,18 +51,40 @@ function CoinService:_hookCoin(coin)
 		return
 	end
 
-	-- when player touches a coin
-	coin.Touched:Connect(function(hit)
-		local character = hit.Parent
+	if coin:GetAttribute("Hooked") then
+		return
+	end
 
-		local player = Players:GetPlayerFromCharacter(character)
+	coin:SetAttribute("Hooked", true)
+end
 
-		if not player then
-			return
+function CoinService:_checkProximity()
+	local coins = CollectionService:GetTagged(COIN_TAG)
+	local players = Players:GetPlayers()
+
+	for _, coin in ipairs(coins) do
+		if coin:GetAttribute("Collected") then
+			continue
 		end
 
-		self:_collectCoin(player, coin)
-	end)
+		local coinPos = coin.Position
+
+		for _, player in ipairs(players) do
+			local character = player.Character
+			if not character then
+				continue
+			end
+
+			local root = character:FindFirstChild("HumanoidRootPart")
+			if not root then
+				continue
+			end
+
+			if (coinPos - root.Position).Magnitude <= COLLECTION_RADIUS then
+				self:_collectCoin(player, coin)
+			end
+		end
+	end
 end
 
 function CoinService:_collectCoin(player, coin)
@@ -80,6 +106,13 @@ function CoinService:_collectCoin(player, coin)
 
 	print(player.Name .. " collected a coin!")
 	coin:Destroy()
+end
+
+function CoinService:KnitStop()
+	if self._proximityConnection then
+		self._proximityConnection:Disconnect()
+		self._proximityConnection = nil
+	end
 end
 
 return CoinService
