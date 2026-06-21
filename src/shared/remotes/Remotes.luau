@@ -1,0 +1,37 @@
+-- Typed remote contracts for Knit.
+-- Declare every remote once here; import this module everywhere.
+
+local Knit = require(game:GetService("ReplicatedStorage").Packages.Knit)
+
+-- StateChanged: server -> all clients
+-- FireAll(newState: string)
+local StateChanged = Knit.CreateRemote("StateChanged") :: any
+
+-- CountdownUpdated: server -> all clients
+-- FireAll(secondsLeft: number)
+local CountdownUpdated = Knit.CreateRemote("CountdownUpdated") :: any
+
+-- TimerUpdated: server -> all clients
+-- FireAll(secondsLeft: number)
+local TimerUpdated = Knit.CreateRemote("TimerUpdated") :: any
+
+-- RoundCoinsUpdated: server -> specific client
+-- Fire(player: Player, roundScore: number)
+local RoundCoinsUpdated = Knit.CreateRemote("RoundCoinsUpdated") :: any
+
+-- LeaderboardUpdated: server -> all clients
+-- FireAll(rankings: PlayerTypes.LeaderboardEntry[])
+local LeaderboardUpdated = Knit.CreateRemote("LeaderboardUpdated") :: any
+
+-- CoinCollected: server -> all clients
+-- FireAll(player: Player, amount: number, tier: string)
+local CoinCollected = Knit.CreateRemote("CoinCollected") :: any
+
+return {
+	StateChanged = StateChanged,
+	CountdownUpdated = CountdownUpdated,
+	TimerUpdated = TimerUpdated,
+	RoundCoinsUpdated = RoundCoinsUpdated,
+	LeaderboardUpdated = LeaderboardUpdated,
+	CoinCollected = CoinCollected,
+}
