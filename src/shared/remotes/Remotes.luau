@@ -19,11 +19,19 @@ local TimerUpdated = Knit.CreateRemote("TimerUpdated") :: any
 -- Fire(player: Player, roundScore: number)
 local RoundCoinsUpdated = Knit.CreateRemote("RoundCoinsUpdated") :: any
 
--- LeaderboardUpdated: server -> all clients
--- FireAll(rankings: PlayerTypes.LeaderboardEntry[])
+-- Used for round rankings
+-- FireAll(topThree: { userId: number, userName: string, score: number, rank: number }[])
 local LeaderboardUpdated = Knit.CreateRemote("LeaderboardUpdated") :: any
 
--- CoinCollected: server -> all clients
+-- Fired after winner is determined
+-- FireAll(winnerName: string, score: number)
+local WinnerAnnounced = Knit.CreateRemote("WinnerAnnounced") :: any
+
+-- Global session leaderboard (sorted by Wins)
+-- FireAll(entries: { userId: number, userName: string, wins: number, coins: number }[])
+local GlobalLeaderboardUpdated = Knit.CreateRemote("GlobalLeaderboardUpdated") :: any
+
+-- Coin collection event (server -> all clients)
 -- FireAll(player: Player, amount: number, tier: string)
 local CoinCollected = Knit.CreateRemote("CoinCollected") :: any
 
@@ -33,5 +41,7 @@ return {
 	TimerUpdated = TimerUpdated,
 	RoundCoinsUpdated = RoundCoinsUpdated,
 	LeaderboardUpdated = LeaderboardUpdated,
+	WinnerAnnounced = WinnerAnnounced,
+	GlobalLeaderboardUpdated = GlobalLeaderboardUpdated,
 	CoinCollected = CoinCollected,
 }

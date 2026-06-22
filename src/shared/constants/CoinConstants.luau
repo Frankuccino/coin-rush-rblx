@@ -8,7 +8,7 @@ return {
 	-- CollectionService tag used to identify coins
 	Tag = "Coin",
 
-	-- Spawn area bounds (X, Z axes)
+	-- Fallback spawn area bounds (used only if ArenaBounds part is missing)
 	SpawnBounds = {
 		MinX = -50,
 		MaxX = 50,

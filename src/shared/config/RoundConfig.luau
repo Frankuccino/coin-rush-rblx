@@ -7,11 +7,14 @@ return {
 	MinPlayers = 1,
 
 	-- Countdown before round starts (seconds)
-	CountdownTime = 5,
+	CountdownTime = 10,
 
 	-- Active round duration (seconds)
 	RoundTime = 10,
 
 	-- Intermission after round ends (seconds)
-	IntermissionTime = 5,
+	IntermissionTime = 10,
+
+	-- Prestige: session coins required to unlock prestige
+	PrestigeThreshold = 25,
 }
