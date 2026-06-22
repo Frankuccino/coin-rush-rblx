@@ -10,10 +10,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CoinService = Knit.CreateService({
 	Name = "CoinService",
-	Client = {},
+	Client = {
+		CoinCollected = Knit.CreateSignal(),
+	},
 })
 
 local COIN_TAG = require(ReplicatedStorage.Shared.constants.CoinConstants).Tag
+local COIN_CONSTANTS = require(ReplicatedStorage.Shared.constants.CoinConstants)
 local COLLECTION_RADIUS = 3.5
 
 function CoinService:KnitStart()
@@ -96,15 +99,22 @@ function CoinService:_collectCoin(player, coin)
 	coin.CanTouch = false
 	coin.CanCollide = false
 
+	local tier = coin:GetAttribute("Tier") :: "Common" | "Rare" | "Epic"
+	local tierConfig = COIN_CONSTANTS.Tiers[tier]
+	local baseAmount = tierConfig.Value
+	local multiplier = self.PlayerDataService:getMultiplier(player)
+	local amount = math.floor(baseAmount * multiplier + 0.5)
+
 	-- permanent progression
-	self.PlayerDataService:addCoins(player, 1)
+	self.PlayerDataService:addCoins(player, amount)
 
 	-- round tracking
-	local roundScore = self.GameService:AddRoundCoin(player, 1)
+	local roundScore = self.GameService:AddRoundCoin(player, amount)
 	-- UI Update
 	self.GameService.Client.RoundCoinsUpdated:Fire(player, roundScore)
+	self.GameService.Client.CoinCollected:FireAll(player, amount, tier)
 
-	print(player.Name .. " collected a coin!")
+	print(player.Name .. " collected a " .. tier .. " coin!")
 	coin:Destroy()
 end
 
