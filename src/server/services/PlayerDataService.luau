@@ -102,6 +102,18 @@ function PlayerDataService:addPrestigeLevel(player, amount)
 	data.prestigeLevel += amount
 end
 
+function PlayerDataService:getData(player)
+	local data = playerData[player]
+	if not data then
+		return nil
+	end
+	return table.clone(data)
+end
+
+function PlayerDataService:getRawData(player)
+	return playerData[player]
+end
+
 function PlayerDataService:getPrestigeLevel(player): number
 	local data = playerData[player]
 
